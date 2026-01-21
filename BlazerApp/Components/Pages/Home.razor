@@ -1,0 +1,147 @@
+﻿@page "/"
+@using BlazerApp.Services.Interfaces
+@inject ICourseService CourseService
+@inject IStudentService StudentService
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<PageTitle>Главная | Система Управления</PageTitle>
+
+<div class="container mt-5 pb-5">
+    <div class="welcome-banner p-5 rounded-4 shadow-lg text-white mb-5">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold">Добро пожаловать, Пользователь! 👋</h1>
+                <p class="fs-5 opacity-75">Сегодня отличный день, чтобы управлять учебным процессом. Все инструменты у вас под рукой.</p>
+                <div class="mt-4">
+                    <button class="btn btn-light btn-lg rounded-pill px-4 fw-bold text-primary shadow" @onclick='() => NavManager.NavigateTo("/createstudent")'>
+                        <i class="bi bi-person-plus-fill me-2"></i>Новый студент
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-center">
+                <i class="bi bi-rocket-takeoff display-1 opacity-50 pulse-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="stat-card p-4 rounded-4 shadow-sm border-0 h-100 bg-white border-start border-primary border-5">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase fw-bold small">Всего студентов</h6>
+                        <h2 class="display-5 fw-bold mb-0">@studentCount</h2>
+                    </div>
+                    <div class="icon-circle bg-primary-subtle text-primary">
+                        <i class="bi bi-people-fill fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stat-card p-4 rounded-4 shadow-sm border-0 h-100 bg-white border-start border-success border-5">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase fw-bold small">Активных курсов</h6>
+                        <h2 class="display-5 fw-bold mb-0">@courseCount</h2>
+                    </div>
+                    <div class="icon-circle bg-success-subtle text-success">
+                        <i class="bi bi-book-half fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="fw-bold mb-4">Быстрый доступ</h3>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="nav-box p-5 rounded-4 shadow-sm text-center h-100 clickable-card" @onclick='() => NavManager.NavigateTo("/course")'>
+                <div class="mb-3">
+                    <i class="bi bi-collection-play-fill display-3 text-success"></i>
+                </div>
+                <h4 class="fw-bold">Курсы</h4>
+                <p class="text-muted">Просмотр, создание и редактирование учебных программ</p>
+                <span class="btn btn-outline-success rounded-pill px-4">Перейти <i class="bi bi-arrow-right ms-2"></i></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="nav-box p-5 rounded-4 shadow-sm text-center h-100 clickable-card" @onclick='() => NavManager.NavigateTo("/student")'>
+                <div class="mb-3">
+                    <i class="bi bi-person-badge-fill display-3 text-primary"></i>
+                </div>
+                <h4 class="fw-bold">Студенты</h4>
+                <p class="text-muted">Управление базой данных учащихся и их профилями</p>
+                <span class="btn btn-outline-primary rounded-pill px-4">Перейти <i class="bi bi-arrow-right ms-2"></i></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Баннер */
+    .welcome-banner {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    }
+
+    /* Карточки статистики */
+    .stat-card {
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Навигационные боксы */
+    .nav-box {
+        background-color: #fff;
+        border: 1px solid #eee;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .nav-box:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        transform: scale(1.02);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.05) !important;
+    }
+
+    .pulse-icon {
+        animation: pulse 3s infinite;
+    }
+
+    @@keyframes pulse {
+        0% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 0.5; }
+    }
+
+    @@media (max-width: 768px) {
+        .welcome-banner { padding: 2rem !important; text-align: center; }
+        .display-4 { font-size: 2.2rem; }
+    }
+</style>
+
+@code {
+    private int studentCount = 0;
+    private int courseCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var students = await StudentService.GetStudentsAsync();
+        if (students?.Data != null) studentCount = students.Data.Count;
+
+        var courses = await CourseService.GetAllCoursesAsync();
+        if (courses?.Data != null) courseCount = courses.Data.Count;
+    }
+}

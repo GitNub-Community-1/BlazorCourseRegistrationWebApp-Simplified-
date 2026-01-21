@@ -1,0 +1,156 @@
+﻿@page "/course"
+@using BlazerApp.Models.Dtos
+@using BlazerApp.Services.Interfaces
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+@inject ICourseService CourseService
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="container mt-5 pb-5">
+    <div class="header-section d-flex justify-content-between align-items-center p-4 mb-5 shadow-sm rounded-4 bg-white">
+        <div>
+            <h1 class="display-5 fw-bold text-dark mb-1">Курсы</h1>
+            <p class="text-muted mb-0">Управление учебным процессом</p>
+        </div>
+        <button class="btn btn-success btn-lg shadow-sm" @onclick="CreateNewCourse">
+            <i class="bi bi-plus-circle me-2"></i> Создать курс
+        </button>
+    </div>
+
+    <div class="search-section p-4 mb-4 bg-white shadow-sm rounded-4 border-start border-primary border-5">
+        <div class="row g-3 align-items-center">
+            <div class="col-auto">
+                <input type="number" class="form-control" @bind="searchId" placeholder="ID курса..." />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" @onclick="() => UpdateCourse(searchId ?? 0)">Найти и изменить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive shadow-lg rounded-4">
+        <table class="table table-hover align-middle bg-white mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4" style="width: 80px;">ID</th>
+                    <th>Название курса</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-end pe-4">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (courses == null || !courses.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center p-5 text-muted">Курсов пока нет...</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var course in courses)
+                    {
+                        <tr class="course-row">
+                            <td class="ps-4 fw-bold text-secondary">#@course.Id</td>
+                            <td>
+                                <span class="course-title" @onclick="() => NavigateToDetails(course.Id)">@course.Title</span>
+                            </td>
+                            <td class="text-center"> 
+                                 <span class="badge rounded-pill bg-light text-success border border-success px-3">
+                                     Активен
+                                 </span> 
+                            </td> 
+                            <td class="text-end pe-4">
+                                <div class="btn-group shadow-sm">
+                                    <button class="btn btn-outline-secondary btn-sm" title="Детали" @onclick="() => NavigateToDetails(course.Id)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-sm" title="Изменить" @onclick="() => UpdateCourse(course.Id)">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" title="Удалить" @onclick="() => DeleteCourse(course.Id)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .course-row { transition: background-color 0.2s; }
+    .course-row:hover { background-color: #f8fbff !important; }
+    
+    .course-title { 
+        cursor: pointer; 
+        font-weight: 600; 
+        color: #2c3e50; 
+        transition: color 0.2s;
+    }
+    .course-title:hover { color: #0d6efd; text-decoration: underline; }
+
+    .header-section {
+        background: linear-gradient(to right, #ffffff, #f9f9f9);
+    }
+    
+    @@media (max-width: 768px) {
+        .btn-group { display: flex; }
+        .header-section { flex-direction: column; text-align: center; gap: 20px; }
+    }
+</style>
+
+@code {
+    private int? searchId;
+    private List<CourseDto> courses = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCourses();
+    }
+
+    private async Task LoadCourses()
+    {
+        var response = await CourseService.GetAllCoursesAsync();
+        if (response != null && response.StatusCode == 200)
+        {
+            courses = response.Data ?? new List<CourseDto>();
+        }
+    }
+
+    private void CreateNewCourse()
+    {
+        NavManager.NavigateTo("/createcourse");
+    }
+
+    private void NavigateToDetails(int id)
+    {
+        NavManager.NavigateTo($"/detailscourse/{id}"); 
+    }
+
+    private void UpdateCourse(int id)
+    {
+        if (id > 0)
+        {
+            NavManager.NavigateTo($"/updatecourse/{id}");
+        }
+    }
+
+    private async Task DeleteCourse(int id)
+    {
+        var response = await CourseService.DeleteCourseAsync(id);
+
+        if (response != null && response.StatusCode == 200)
+        {
+            courses.RemoveAll(c => c.Id == id);
+            Console.WriteLine($"Курс #{id} успешно удален.");
+        }
+        else
+        {
+            Console.WriteLine($"Ошибка при удалении: {response?.Message}");
+        }
+    }
+}

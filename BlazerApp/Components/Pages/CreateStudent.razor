@@ -1,0 +1,169 @@
+﻿@page "/createstudent"
+@using BlazerApp.Models.Dtos
+@using BlazerApp.Services.Interfaces
+@rendermode InteractiveServer
+@inject IStudentService StudentService
+@inject ICourseService CourseService
+@inject NavigationManager NavManager
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="student-card shadow-lg rounded-4 overflow-hidden bg-white">
+                <div class="card-header-student p-4 text-center">
+                    <div class="icon-box mb-2">
+                        <i class="bi bi-person-plus-fill text-white fs-1"></i>
+                    </div>
+                    <h2 class="fw-bold text-white mb-0">Регистрация студента</h2>
+                    <p class="text-white-50">Заполните данные для зачисления на курс</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <EditForm Model="@studentModel" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <label class="form-label fw-semibold">Полное имя</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control custom-input border-0 bg-light" 
+                                           @bind="studentModel.FullName" placeholder="Напр: Иванов Иван Иванович" required />
+                                </div>
+                            </div>
+
+                            <div class="col-12 mb-4">
+                                <label class="form-label fw-semibold">Электронная почта</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control custom-input border-0 bg-light" 
+                                           @bind="studentModel.Email" placeholder="example@mail.com" required />
+                                </div>
+                            </div>
+
+                            <div class="col-12 mb-4">
+                                <label class="form-label fw-semibold">Курс обучения</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-book"></i></span>
+                                    <select class="form-select custom-input border-0 bg-light" @bind="studentModel.CourseId" required>
+                                        <option value="0" disabled selected>-- Выберите курс из списка --</option>
+                                        @if (courses != null)
+                                        {
+                                            @foreach (var course in courses)
+                                            {
+                                                <option value="@course.Id">@course.Title</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                @if (studentModel.CourseId == 0 && showValidationError)
+                                {
+                                    <small class="text-danger mt-1 d-block">Пожалуйста, выберите курс</small>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="button" class="btn btn-light btn-lg px-4 me-md-2" @onclick="GoBack" disabled="@isSubmitting">
+                                Отмена
+                            </button>
+                            <button type="submit" class="btn btn-indigo btn-lg px-5 shadow-sm" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Сохранение...</span>
+                                }
+                                else
+                                {
+                                    <span><i class="bi bi-shield-check me-2"></i>Зарегистрировать</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-header-student {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+    }
+
+    .custom-input {
+        padding: 0.8rem 1rem;
+        border-radius: 0 10px 10px 0;
+        transition: all 0.2s;
+    }
+
+    .input-group-text {
+        border-radius: 10px 0 0 10px;
+    }
+
+    .custom-input:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.1);
+        border: 1px solid #4f46e5 !important;
+    }
+
+    .btn-indigo {
+        background-color: #4f46e5;
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-indigo:hover:not(:disabled) {
+        background-color: #3730a3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+    }
+
+    @@media (max-width: 768px) {
+        .btn-lg { width: 100%; }
+        .card-body { padding: 1.5rem !important; }
+    }
+</style>
+
+@code {
+    private AddStudentDto studentModel = new AddStudentDto { CourseId = 0 };
+    private List<CourseDto>? courses;
+    private bool isSubmitting = false;
+    private bool showValidationError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await CourseService.GetAllCoursesAsync();
+        if (response?.StatusCode == 200)
+        {
+            courses = response.Data;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (studentModel.CourseId == 0)
+        {
+            showValidationError = true;
+            return;
+        }
+
+        isSubmitting = true;
+        showValidationError = false;
+
+        var result = await StudentService.AddStudentAsync(studentModel);
+        
+        if (result.StatusCode == 201)
+        {
+            NavManager.NavigateTo("/student");
+        }
+        else
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/student");
+}

@@ -1,0 +1,164 @@
+﻿@page "/createcourse"
+@using BlazerApp.Models.Dtos
+@using BlazerApp.Models.Entities
+@using BlazerApp.Services.Interfaces
+@rendermode InteractiveServer
+@inject ICourseService CourseService
+@inject NavigationManager NavManager
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="create-card shadow-lg rounded-4 overflow-hidden bg-white">
+                <div class="card-header-custom p-4 text-center">
+                    <h2 class="fw-bold text-white mb-0">Новый курс</h2>
+                    <p class="text-white-50">Заполните данные для запуска обучения</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success d-flex align-items-center mb-4 fade show border-0 shadow-sm" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <div>@successMessage</div>
+                        </div>
+                    }
+
+                    <EditForm Model="@courseModel" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger small mb-3" />
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Название курса</label>
+                            <input type="text" class="form-control custom-input" 
+                                   @bind="courseModel.Title" 
+                                   placeholder="Напр: C# Mastery" 
+                                   disabled="@isSubmitting" required />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Описание</label>
+                            <textarea class="form-control custom-input" 
+                                      @bind="courseModel.Description" 
+                                      rows="3" 
+                                      placeholder="Краткое описание программы..." 
+                                      disabled="@isSubmitting"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">Уровень сложности</label>
+                                <select class="form-select custom-input" @bind="courseModel.Level" disabled="@isSubmitting">
+                                    <option value="Easy">Новичок</option>
+                                    <option value="Medium">Средний</option>
+                                    <option value="Hard">Профи</option>
+                                    <option value="Impossible">Невозможный</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">Длительность (часов)</label>
+                                <input type="number" class="form-control custom-input" 
+                                       @bind="courseModel.DurationInHours" 
+                                       disabled="@isSubmitting" />
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="button" class="btn btn-light btn-lg px-4 me-md-2" 
+                                    @onclick="GoBack" disabled="@isSubmitting">Отмена</button>
+                            
+                            <button type="submit" 
+                                    class="btn btn-success btn-lg px-5 shadow-sm btn-create" 
+                                    disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Создание...</span>
+                                }
+                                else
+                                {
+                                    <span><i class="bi bi-rocket-takeoff me-2"></i>Создать курс</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .create-card { border: none; }
+    .card-header-custom { background: linear-gradient(135deg, #198754 0%, #146c43 100%); }
+    
+    .custom-input {
+        padding: 0.8rem 1rem;
+        border-radius: 10px;
+        border: 2px solid #f8f9fa;
+        background-color: #f8f9fa;
+        transition: all 0.2s;
+    }
+
+    .custom-input:focus {
+        background-color: #fff;
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.1);
+    }
+
+    .btn-create {
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
+    }
+
+    @@media (max-width: 768px) {
+        .btn-lg { width: 100%; }
+    }
+</style>
+
+@code {
+    private AddCourseDto courseModel = new AddCourseDto { Level = LevelEnum.Easy };
+    private bool isSubmitting = false;
+    private string? successMessage;
+
+    private async Task HandleSubmit()
+    {
+        
+        if (isSubmitting) return;
+
+        isSubmitting = true;
+        successMessage = null; 
+
+        try
+        {
+            // 2. Вызов твоего сервиса
+            var response = await CourseService.AddCourseAsync(courseModel);
+
+            if (response.StatusCode == 201) 
+            {
+                successMessage = $"Курс \"{courseModel.Title}\" успешно создан! Перенаправление...";
+                StateHasChanged(); 
+                
+                await Task.Delay(2000); 
+                NavManager.NavigateTo("/course");
+            }
+            else
+            {
+                isSubmitting = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при создании курса: {ex.Message}");
+            isSubmitting = false;
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/course");
+}

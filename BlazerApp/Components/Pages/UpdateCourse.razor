@@ -1,0 +1,180 @@
+﻿@page "/updatecourse/{Id:int}"
+@using BlazerApp.Models.Dtos
+@using BlazerApp.Services.Interfaces
+@rendermode InteractiveServer
+@inject ICourseService CourseService
+@inject NavigationManager NavManager
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="update-card shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header-update p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="fw-bold text-white mb-0">Редактирование</h2>
+                        <p class="text-white-50 mb-0">ID курса: #@Id</p>
+                    </div>
+                    <i class="bi bi-pencil-square text-white fs-1 opacity-50"></i>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-white">
+                    @if (isLoading)
+                    {
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-warning" role="status"></div>
+                            <p class="mt-2 text-muted">Загрузка данных курса...</p>
+                        </div>
+                    }
+                    else if (courseModel == null)
+                    {
+                        <div class="alert alert-danger">Курс не найден или произошла ошибка загрузки.</div>
+                        <button class="btn btn-outline-secondary" @onclick="GoBack">Назад к списку</button>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-warning d-flex align-items-center mb-4 border-0 shadow-sm animate-fade-in" role="alert">
+                                <i class="bi bi-cloud-check-fill me-2 fs-4"></i>
+                                <div>@successMessage</div>
+                            </div>
+                        }
+
+                        <EditForm Model="@courseModel" OnValidSubmit="HandleUpdate">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-secondary">Название курса</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-type"></i></span>
+                                    <input type="text" class="form-control custom-input border-0 bg-light" @bind="courseModel.Title" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-secondary">Описание программы</label>
+                                <textarea class="form-control custom-input border-0 bg-light" @bind="courseModel.Description" rows="4"></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label fw-bold text-secondary">Сложность</label>
+                                    <select class="form-select custom-input border-0 bg-light" @bind="courseModel.Level">
+                                        <option value="Easy">Beginner</option>
+                                        <option value="Medium">Intermediate</option>
+                                        <option value="Hard">Advanced</option>
+                                        <option value="Impossible">Expert</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label fw-bold text-secondary">Часы обучения</label>
+                                    <input type="number" class="form-control custom-input border-0 bg-light" @bind="courseModel.DurationInHours" />
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <button type="button" class="btn btn-link text-decoration-none text-muted me-md-3" @onclick="GoBack" disabled="@isSubmitting">Отменить изменения</button>
+                                <button type="submit" class="btn btn-update btn-lg px-5 shadow" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    <i class="bi bi-save2 me-2"></i> Сохранить
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .update-card { border: none; }
+    .card-header-update {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .custom-input {
+        padding: 0.85rem;
+        border-radius: 12px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .custom-input:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(245, 158, 11, 0.15);
+        border: 1px solid #f59e0b !important;
+    }
+
+    .btn-update {
+        background-color: #f59e0b;
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-update:hover:not(:disabled) {
+        background-color: #d97706;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@media (max-width: 768px) {
+        .btn-update { width: 100%; }
+        .card-header-update { text-align: center; flex-direction: column; }
+    }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    private CourseDto? courseModel;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await CourseService.GetCourseByid(Id);
+        if (response.StatusCode == 200)
+        {
+            courseModel = response.Data;
+        }
+        isLoading = false;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (isSubmitting || courseModel == null) return;
+        isSubmitting = true;
+
+        var response = await CourseService.UpdateCourseAsync(courseModel);
+
+        if (response.StatusCode == 200)
+        {
+            successMessage = "Изменения успешно сохранены! Возвращаемся в меню...";
+            StateHasChanged();
+            
+            await Task.Delay(2000);
+            NavManager.NavigateTo("/course");
+        }
+        else
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/course");
+}

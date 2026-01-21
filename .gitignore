@@ -1,0 +1,38 @@
+## --- Visual Studio & .NET ---
+# Папки компиляции (самый главный мусор)
+[Bb]in/
+[Oo]bj/
+# Профили запуска и пользовательские настройки
+.vs/
+UserSecretsId
+*.user
+*.userosscache
+*.sln.docstates
+
+## --- JetBrains Rider ---
+# Настройки Rider и IntelliJ Idea
+.idea/
+*.sln.iml
+*.idea.projectname
+# Временные файлы поиска и кэша
+.shelf/
+
+## --- VS Code ---
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+## --- OS & Miscellaneous ---
+# Мусор Windows и Mac
+Thumbs.db
+.DS_Store
+desktop.ini
+# Логи
+*.log
+
+## --- Web / Node (если есть Blazor/JS) ---
+node_modules/
+.npm/

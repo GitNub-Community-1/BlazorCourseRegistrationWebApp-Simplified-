@@ -1,0 +1,211 @@
+﻿@page "/updatestudent/{Id:int}"
+@using BlazerApp.Models.Dtos
+@using BlazerApp.Services.Interfaces
+@rendermode InteractiveServer
+@inject IStudentService StudentService
+@inject ICourseService CourseService
+@inject NavigationManager NavManager
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="update-card shadow-lg rounded-4 overflow-hidden bg-white">
+                
+                <div class="card-header-update p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="fw-bold text-white mb-0">Редактирование профиля</h2>
+                        <p class="text-white-50 mb-0">Студент ID: #@Id</p>
+                    </div>
+                    <div class="pulse-icon">
+                        <i class="bi bi-person-gear text-white fs-1"></i>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    @if (isLoading)
+                    {
+                        <div class="text-center p-5">
+                            <div class="spinner-grow text-primary" role="status"></div>
+                            <p class="mt-3 text-muted fw-bold">Загрузка данных студента...</p>
+                        </div>
+                    }
+                    else if (studentModel == null)
+                    {
+                        <div class="alert alert-danger shadow-sm border-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> Студент не найден.
+                        </div>
+                        <button class="btn btn-outline-secondary rounded-pill" @onclick="GoBack">Вернуться назад</button>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-success d-flex align-items-center mb-4 border-0 shadow animate-slide-down" role="alert">
+                                <i class="bi bi-check-all fs-4 me-2"></i>
+                                <div>@successMessage</div>
+                            </div>
+                        }
+
+                        <EditForm Model="@studentModel" OnValidSubmit="HandleUpdate">
+                            <DataAnnotationsValidator />
+
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <label class="form-label fw-bold text-secondary small text-uppercase">Полное имя</label>
+                                    <input type="text" class="form-control custom-input border-0 shadow-sm" 
+                                           @bind="studentModel.FullName" required />
+                                </div>
+
+                                <div class="col-12 mb-4">
+                                    <label class="form-label fw-bold text-secondary small text-uppercase">Email адрес</label>
+                                    <input type="email" class="form-control custom-input border-0 shadow-sm" 
+                                           @bind="studentModel.Email" required />
+                                </div>
+
+                                <div class="col-12 mb-4">
+                                    <label class="form-label fw-bold text-secondary small text-uppercase">Текущий курс</label>
+                                    <select class="form-select custom-input border-0 shadow-sm" @bind="studentModel.CourseId">
+                                        @if (availableCourses != null)
+                                        {
+                                            @foreach (var c in availableCourses)
+                                            {
+                                                <option value="@c.Id">@c.Title</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-5">
+                                <button type="button" class="btn btn-link text-decoration-none text-muted me-md-3" 
+                                        @onclick="GoBack" disabled="@isSubmitting">Отмена</button>
+                                
+                                <button type="submit" class="btn btn-save btn-lg px-5 shadow" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <span>Сохранение...</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="bi bi-arrow-repeat me-2"></i>Обновить данные</span>
+                                    }
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Градиент в стиле "Indigo" */
+    .card-header-update {
+        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+    }
+
+    .custom-input {
+        padding: 1rem;
+        background-color: #f8fafc;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .custom-input:focus {
+        background-color: #fff;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .btn-save {
+        background-color: #4338ca;
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-save:hover:not(:disabled) {
+        background-color: #3730a3;
+        transform: scale(1.02);
+        box-shadow: 0 10px 20px rgba(67, 56, 202, 0.3);
+    }
+
+    /* Анимация уведомления */
+    .animate-slide-down {
+        animation: slideDown 0.4s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .pulse-icon {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @@media (max-width: 768px) {
+        .btn-lg { width: 100%; }
+        .card-body { padding: 1.5rem !important; }
+    }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private StudentDto? studentModel;
+    private List<CourseDto>? availableCourses;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        var studentRes = await StudentService.GetStudentById(Id);
+        if (studentRes.StatusCode == 200)
+        {
+            studentModel = studentRes.Data;
+        }
+        
+        var coursesRes = await CourseService.GetAllCoursesAsync();
+        if (coursesRes.StatusCode == 200)
+        {
+            availableCourses = coursesRes.Data;
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (isSubmitting || studentModel == null) return;
+        
+        isSubmitting = true;
+        var response = await StudentService.UpdateStudentAsync(studentModel);
+
+        if (response.StatusCode == 200)
+        {
+            successMessage = "Данные студента успешно обновлены!";
+            StateHasChanged();
+            
+            await Task.Delay(2000);
+            NavManager.NavigateTo("/student");
+        }
+        else
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/student");
+}
