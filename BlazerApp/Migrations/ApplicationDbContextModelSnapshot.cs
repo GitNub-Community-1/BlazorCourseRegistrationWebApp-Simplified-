@@ -8,6 +8,7 @@ using Somon_TJ_Nedvisimost.Data;
 
 #nullable disable
 
+//True Structure By Abubakr
 namespace BlazerApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]

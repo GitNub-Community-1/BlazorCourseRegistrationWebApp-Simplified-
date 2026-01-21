@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+//True Structure By Abubakr
 
 namespace WebAPIWithJWTAndIdentity.MiddleWare;
 
